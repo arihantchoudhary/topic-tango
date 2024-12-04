@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ConversationSetup } from "@/components/ConversationSetup";
 import { ConversationDisplay } from "@/components/ConversationDisplay";
 
@@ -46,6 +46,7 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentParticipants, setCurrentParticipants] = useState<string[]>([]);
+  const [currentSpeakerIndex, setCurrentSpeakerIndex] = useState(0);
 
   const simulateResponse = async (sender: string) => {
     setIsLoading(true);
@@ -62,11 +63,26 @@ const Index = () => {
       },
     ]);
     setIsLoading(false);
+    
+    // Switch to the next speaker
+    setCurrentSpeakerIndex((prevIndex) => (prevIndex + 1) % 2);
   };
+
+  // Effect to continue the conversation
+  useEffect(() => {
+    if (isConversationStarted && !isLoading && currentParticipants.length === 2) {
+      const timeoutId = setTimeout(() => {
+        simulateResponse(currentParticipants[currentSpeakerIndex]);
+      }, 2000);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [isConversationStarted, isLoading, messages, currentParticipants, currentSpeakerIndex]);
 
   const handleStart = async (topic: string, participants: string[]) => {
     setCurrentParticipants(participants);
     setIsConversationStarted(true);
+    setCurrentSpeakerIndex(0);
     setMessages([
       {
         id: Date.now().toString(),
@@ -74,13 +90,13 @@ const Index = () => {
         sender: getLLMName(participants[0]),
       },
     ]);
-    await simulateResponse(participants[1]);
   };
 
   const handleReset = () => {
     setIsConversationStarted(false);
     setMessages([]);
     setCurrentParticipants([]);
+    setCurrentSpeakerIndex(0);
   };
 
   return (
