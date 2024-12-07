@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { ConversationSetup } from "@/components/ConversationSetup";
 import { ConversationDisplay } from "@/components/ConversationDisplay";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 interface Message {
   id: string;
@@ -37,6 +39,7 @@ const getLLMName = (id: string) => {
     claude: "Claude",
     llama: "LLaMA",
     palm: "PaLM",
+    human: "Human",
   };
   return names[id] || id;
 };
@@ -47,8 +50,15 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [currentParticipants, setCurrentParticipants] = useState<string[]>([]);
   const [currentSpeakerIndex, setCurrentSpeakerIndex] = useState(0);
+  const [humanInput, setHumanInput] = useState("");
+  const [isWaitingForHuman, setIsWaitingForHuman] = useState(false);
 
   const simulateResponse = async (sender: string) => {
+    if (sender === "human") {
+      setIsWaitingForHuman(true);
+      return;
+    }
+
     setIsLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 1500));
     const responses = MOCK_RESPONSES[sender];
@@ -63,21 +73,35 @@ const Index = () => {
       },
     ]);
     setIsLoading(false);
-    
-    // Switch to the next speaker
     setCurrentSpeakerIndex((prevIndex) => (prevIndex + 1) % 2);
   };
 
-  // Effect to continue the conversation
+  const handleHumanInput = () => {
+    if (humanInput.trim()) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          content: humanInput,
+          sender: "Human",
+        },
+      ]);
+      setHumanInput("");
+      setIsWaitingForHuman(false);
+      setCurrentSpeakerIndex((prevIndex) => (prevIndex + 1) % 2);
+    }
+  };
+
   useEffect(() => {
-    if (isConversationStarted && !isLoading && currentParticipants.length === 2) {
+    if (isConversationStarted && !isLoading && currentParticipants.length === 2 && !isWaitingForHuman) {
+      const currentSpeaker = currentParticipants[currentSpeakerIndex];
       const timeoutId = setTimeout(() => {
-        simulateResponse(currentParticipants[currentSpeakerIndex]);
+        simulateResponse(currentSpeaker);
       }, 2000);
 
       return () => clearTimeout(timeoutId);
     }
-  }, [isConversationStarted, isLoading, messages, currentParticipants, currentSpeakerIndex]);
+  }, [isConversationStarted, isLoading, messages, currentParticipants, currentSpeakerIndex, isWaitingForHuman]);
 
   const handleStart = async (topic: string, participants: string[]) => {
     setCurrentParticipants(participants);
@@ -97,6 +121,8 @@ const Index = () => {
     setMessages([]);
     setCurrentParticipants([]);
     setCurrentSpeakerIndex(0);
+    setHumanInput("");
+    setIsWaitingForHuman(false);
   };
 
   return (
@@ -112,11 +138,25 @@ const Index = () => {
         {!isConversationStarted ? (
           <ConversationSetup onStart={handleStart} />
         ) : (
-          <ConversationDisplay
-            messages={messages}
-            isLoading={isLoading}
-            onReset={handleReset}
-          />
+          <>
+            <ConversationDisplay
+              messages={messages}
+              isLoading={isLoading}
+              onReset={handleReset}
+            />
+            {isWaitingForHuman && (
+              <div className="mt-4 w-full max-w-4xl mx-auto flex gap-2">
+                <Input
+                  value={humanInput}
+                  onChange={(e) => setHumanInput(e.target.value)}
+                  placeholder="Type your message..."
+                  onKeyPress={(e) => e.key === "Enter" && handleHumanInput()}
+                  className="flex-1"
+                />
+                <Button onClick={handleHumanInput}>Send</Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

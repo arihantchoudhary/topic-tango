@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState } from "react";
 
 const LLM_OPTIONS = [
+  { id: "human", name: "Human", personality: "That's you!" },
   { id: "gpt4", name: "GPT-4", personality: "Precise and analytical" },
   { id: "claude", name: "Claude", personality: "Thoughtful and nuanced" },
   { id: "llama", name: "LLaMA", personality: "Creative and exploratory" },
@@ -25,6 +26,22 @@ export const ConversationSetup = ({ onStart }: ConversationSetupProps) => {
     }
   };
 
+  const handleParticipantChange = (value: string, isFirstParticipant: boolean) => {
+    if (isFirstParticipant) {
+      setParticipant1(value);
+      // If human is selected for first participant, ensure second participant is not human
+      if (value === "human" && participant2 === "human") {
+        setParticipant2("");
+      }
+    } else {
+      setParticipant2(value);
+      // If human is selected for second participant, ensure first participant is not human
+      if (value === "human" && participant1 === "human") {
+        setParticipant1("");
+      }
+    }
+  };
+
   return (
     <div className="animate-fade-in-slow space-y-6 w-full max-w-md mx-auto p-6 glass-panel">
       <div className="space-y-2">
@@ -40,13 +57,20 @@ export const ConversationSetup = ({ onStart }: ConversationSetupProps) => {
       <div className="space-y-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">First Participant</label>
-          <Select value={participant1} onValueChange={setParticipant1}>
+          <Select 
+            value={participant1} 
+            onValueChange={(value) => handleParticipantChange(value, true)}
+          >
             <SelectTrigger className="bg-white bg-opacity-50">
-              <SelectValue placeholder="Select LLM" />
+              <SelectValue placeholder="Select Participant" />
             </SelectTrigger>
             <SelectContent>
               {LLM_OPTIONS.map((llm) => (
-                <SelectItem key={llm.id} value={llm.id}>
+                <SelectItem 
+                  key={llm.id} 
+                  value={llm.id}
+                  disabled={llm.id === "human" && participant2 === "human"}
+                >
                   <div className="flex flex-col">
                     <span>{llm.name}</span>
                     <span className="text-xs text-muted-foreground">{llm.personality}</span>
@@ -59,13 +83,20 @@ export const ConversationSetup = ({ onStart }: ConversationSetupProps) => {
 
         <div className="space-y-2">
           <label className="text-sm font-medium">Second Participant</label>
-          <Select value={participant2} onValueChange={setParticipant2}>
+          <Select 
+            value={participant2} 
+            onValueChange={(value) => handleParticipantChange(value, false)}
+          >
             <SelectTrigger className="bg-white bg-opacity-50">
-              <SelectValue placeholder="Select LLM" />
+              <SelectValue placeholder="Select Participant" />
             </SelectTrigger>
             <SelectContent>
               {LLM_OPTIONS.map((llm) => (
-                <SelectItem key={llm.id} value={llm.id}>
+                <SelectItem 
+                  key={llm.id} 
+                  value={llm.id}
+                  disabled={llm.id === "human" && participant1 === "human"}
+                >
                   <div className="flex flex-col">
                     <span>{llm.name}</span>
                     <span className="text-xs text-muted-foreground">{llm.personality}</span>
