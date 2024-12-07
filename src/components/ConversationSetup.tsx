@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
 
@@ -11,18 +10,30 @@ const LLM_OPTIONS = [
   { id: "palm", name: "PaLM", personality: "Concise and direct" },
 ];
 
+const GAME_OPTIONS = [
+  { id: "minecraft", name: "Minecraft" },
+  { id: "fortnite", name: "Fortnite" },
+  { id: "valorant", name: "Valorant" },
+  { id: "league", name: "League of Legends" },
+  { id: "csgo", name: "Counter-Strike" },
+  { id: "overwatch", name: "Overwatch" },
+  { id: "apex", name: "Apex Legends" },
+  { id: "genshin", name: "Genshin Impact" },
+];
+
 interface ConversationSetupProps {
   onStart: (topic: string, participants: string[]) => void;
 }
 
 export const ConversationSetup = ({ onStart }: ConversationSetupProps) => {
-  const [topic, setTopic] = useState("");
+  const [selectedGame, setSelectedGame] = useState("");
   const [participant1, setParticipant1] = useState("");
   const [participant2, setParticipant2] = useState("");
 
   const handleStart = () => {
-    if (topic && participant1 && participant2) {
-      onStart(topic, [participant1, participant2]);
+    if (selectedGame && participant1 && participant2) {
+      const gameName = GAME_OPTIONS.find(game => game.id === selectedGame)?.name || selectedGame;
+      onStart(gameName, [participant1, participant2]);
     }
   };
 
@@ -45,13 +56,25 @@ export const ConversationSetup = ({ onStart }: ConversationSetupProps) => {
   return (
     <div className="animate-fade-in-slow space-y-6 w-full max-w-md mx-auto p-6 glass-panel">
       <div className="space-y-2">
-        <label className="text-sm font-medium">Conversation Topic</label>
-        <Input
-          placeholder="Enter a topic for discussion..."
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-          className="bg-white bg-opacity-50"
-        />
+        <label className="text-sm font-medium">Select Game</label>
+        <Select 
+          value={selectedGame} 
+          onValueChange={setSelectedGame}
+        >
+          <SelectTrigger className="bg-white bg-opacity-50">
+            <SelectValue placeholder="Choose a game..." />
+          </SelectTrigger>
+          <SelectContent>
+            {GAME_OPTIONS.map((game) => (
+              <SelectItem 
+                key={game.id} 
+                value={game.id}
+              >
+                {game.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-4">
@@ -110,7 +133,7 @@ export const ConversationSetup = ({ onStart }: ConversationSetupProps) => {
 
       <Button 
         onClick={handleStart}
-        disabled={!topic || !participant1 || !participant2}
+        disabled={!selectedGame || !participant1 || !participant2}
         className="w-full transition-all hover:scale-[1.02] active:scale-[0.98]"
       >
         Start Conversation
